@@ -14,6 +14,9 @@ const StopProcessSignal = z.enum([
   "USR2",
 ]);
 
+export const StdMode = z.enum(["AUTO", "NONE"]).or(z.string().brand());
+export type StdMode = z.infer<typeof StdMode>;
+
 export const ProgramConfiguration = z.object({
   cmd: z.string(),
   numprocs: z.number().int().min(1).max(100).optional().default(1),
@@ -47,16 +50,8 @@ export const ProgramConfiguration = z.object({
     .max(secondsInOneHour)
     .optional()
     .default(10),
-  stdout: z
-    .enum(["AUTO", "NONE"])
-    .or(z.string().brand())
-    .optional()
-    .default("AUTO"),
-  stderr: z
-    .enum(["AUTO", "NONE"])
-    .or(z.string().brand())
-    .optional()
-    .default("AUTO"),
+  stdout: StdMode.optional().default("AUTO"),
+  stderr: StdMode.optional().default("AUTO"),
   env: z
     .record(z.unknown().transform((v) => String(v)))
     .optional()

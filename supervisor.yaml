@@ -1,41 +1,43 @@
 programs:
-  backoff:
-    cmd: node ./test-binaries/quick-exit.js
-    numprocs: 1
-    workingdir: ""
-    autostart: true
-    autorestart: true
-    exitcodes:
-      - 2
-    startretries: 3
-    starttime: 10
-    stopsignal: QUIT
-    stoptime: 10
-    stderr: /tmp/nginx.stderr
-    env:
-      ANSWER: "42"
-      STARTED_BY: taskmaster
-  infinite:
-    cmd: node ./test-binaries/signal-catcher.js
-    numprocs: 3
-    workingdir: /tmp
-    autostart: true
-    autorestart: true
-    exitcodes:
-      - 2
-    startretries: 3
-    starttime: 10
-    stopsignal: QUIT
-    stoptime: 10
-    stdout: /tmp/nginx.stdout
-    stderr: /tmp/nginx.stderr
-    env:
-      ANSWER: "42"
-      STARTED_BY: true
-  unknown-command:
-    cmd: yolo
-    autostart: true
-    autorestart: true
-    startretries: 3
-    starttime: 10
-    stoptime: 10
+  simple ls:
+    cmd: ls -lh
+  # backoff:
+  #   cmd: node ./test-binaries/quick-exit.js
+  #   numprocs: 1
+  #   workingdir: ""
+  #   autostart: true
+  #   autorestart: true
+  #   exitcodes:
+  #     - 2
+  #   startretries: 3
+  #   starttime: 10
+  #   stopsignal: QUIT
+  #   stoptime: 10
+  #   stderr: /tmp/nginx.stderr
+  #   env:
+  #     ANSWER: "42"
+  #     STARTED_BY: taskmaster
+  # infinite:
+  #   cmd: node ./test-binaries/signal-catcher.js
+  #   numprocs: 3
+  #   workingdir: /tmp
+  #   autostart: true
+  #   autorestart: true
+  #   exitcodes:
+  #     - 2
+  #   startretries: 3
+  #   starttime: 10
+  #   stopsignal: QUIT
+  #   stoptime: 10
+  #   stdout: /tmp/nginx.stdout
+  #   stderr: /tmp/nginx.stderr
+  #   env:
+  #     ANSWER: "42"
+  #     STARTED_BY: true
+  # unknown-command:
+  #   cmd: yolo
+  #   autostart: true
+  #   autorestart: true
+  #   startretries: 3
+  #   starttime: 10
+  #   stoptime: 10
