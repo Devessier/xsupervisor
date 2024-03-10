@@ -164,7 +164,7 @@ export const processMachine = setup({
     Executing: {
       entry: log("Enters Executing state"),
       exit: "Stop process lifetime chronometer",
-      initial: "Starting",
+      initial: "Spawning",
       invoke: {
         src: "Spawn process",
         input: ({ context }) => ({ configuration: context.configuration }),

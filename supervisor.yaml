@@ -1,6 +1,7 @@
 programs:
   simple ls:
-    cmd: ls -lh
+    cmd: l -lh
+    starttime: 0
   # backoff:
   #   cmd: node ./test-binaries/quick-exit.js
   #   numprocs: 1
