@@ -1,8 +1,7 @@
 programs:
   backoff:
-    cmd: ./tests/bin_backoff
+    cmd: node ./test-binaries/quick-exit.js
     numprocs: 1
-    umask: ""
     workingdir: ""
     autostart: true
     autorestart: true
@@ -16,31 +15,9 @@ programs:
     env:
       ANSWER: "42"
       STARTED_BY: taskmaster
-  exited:
-    cmd: ./tests/bin_exited
-    numprocs: 1
-    umask: "022"
-    workingdir: /tmp
-    autostart: true
-    autorestart: unexpected
-    exitcodes:
-      - 0
-      - 2
-    startretries: 3
-    starttime: 12
-    stopsignal: QUIT
-    stoptime: 10
-    stdout: /tmp/nginx.stdout
-    stderr: /tmp/nginx.stderr
-    env:
-      ANSWER: "42"
-      STARTED_BY: taskmaster
-  exited yeahhhh:
-    cmd: ./tests/bin_exited
   infinite:
-    cmd: ./tests/bin_infinite
+    cmd: node ./test-binaries/signal-catcher.js
     numprocs: 3
-    umask: "022"
     workingdir: /tmp
     autostart: true
     autorestart: true
