@@ -18,5 +18,9 @@
     "@types/node": "^20.11.25",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.2"
+  },
+  "dependencies": {
+    "yaml": "^2.4.1",
+    "zod": "^3.22.4"
   }
 }
