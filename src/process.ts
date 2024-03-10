@@ -154,7 +154,7 @@ export const processMachine = setup({
       ],
     },
     Stopped: {
-      entry: log("Enters Stopped state"),
+      entry: [log("Enters Stopped state"), "Reset start retries in context"],
       on: {
         Start: {
           target: "Executing",
@@ -229,7 +229,7 @@ export const processMachine = setup({
       ],
     },
     Exited: {
-      entry: log("Enters Exited state"),
+      entry: [log("Enters Exited state"), "Reset start retries in context"],
       on: {
         Start: {
           target: "Executing",
