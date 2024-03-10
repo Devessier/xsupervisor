@@ -1,9 +1,12 @@
-import { ActorRefFrom, setup } from "xstate";
+import { ActorRefFrom, enqueueActions, setup } from "xstate";
 import { ProgramConfiguration } from "./config-parsing";
 import { ProcessActor, processMachine } from "./process";
 
 export const programMachine = setup({
   types: {
+    events: {} as {
+      type: "Start";
+    },
     input: {} as {
       configuration: ProgramConfiguration;
     },
@@ -35,6 +38,17 @@ export const programMachine = setup({
       configuration: input.configuration,
       processActors,
     };
+  },
+  on: {
+    Start: {
+      actions: enqueueActions(({ context, enqueue }) => {
+        for (const processActor of context.processActors) {
+          enqueue.sendTo(processActor, {
+            type: "Start",
+          });
+        }
+      }),
+    },
   },
 });
 

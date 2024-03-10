@@ -230,9 +230,19 @@ export const processMachine = setup({
     },
     Exited: {
       entry: log("Enters Exited state"),
+      on: {
+        Start: {
+          target: "Executing",
+        },
+      },
     },
     Fatal: {
-      entry: log("Enters Fatal state"),
+      entry: [log("Enters Fatal state"), "Reset start retries in context"],
+      on: {
+        Start: {
+          target: "Executing",
+        },
+      },
     },
   },
 });

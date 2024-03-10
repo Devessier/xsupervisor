@@ -30,7 +30,9 @@ cli
     "--config, -c",
     "The configuration YAML file to define the initial setup of xsupervisor"
   )
-  .action(launchServer);
+  .action(() => {
+    launchServer().catch(console.error);
+  });
 
 cli
   .command("dashboard get-state <program>")
@@ -62,6 +64,33 @@ cli
     }
   });
 
+cli
+  .command("dashboard start <program>")
+  .describe(
+    "Start a program that was never autostarted or that was exit or stopped."
+  )
+  .action(async (program) => {
+    try {
+      const res = await fetch(
+        `http://localhost:3000/program/${program}/start`,
+        { method: "POST" }
+      );
+      if (res.status === 404) {
+        console.error(`The program "${program}" does not exist.`);
+
+        return;
+      }
+
+      if (res.status !== 200) {
+        throw new Error("Unknown error");
+      }
+
+      console.log(`The program "${program}" was started.`);
+    } catch (err) {
+      console.error(err);
+    }
+  });
+
 async function launchServer() {
   const configuration = await readAndParseConfigurationFile(
     pathJoin(__dirname, "../supervisor.yaml")
@@ -80,45 +109,76 @@ async function launchServer() {
   httpServer.setValidatorCompiler(validatorCompiler);
   httpServer.setSerializerCompiler(serializerCompiler);
 
-  httpServer.withTypeProvider<ZodTypeProvider>().get(
-    "/program/:id",
-    {
-      schema: {
-        params: z.object({
-          id: z.string(),
-        }),
-        response: {
-          404: z.string(),
-          200: GetProgramStateResponseBody,
+  httpServer
+    .withTypeProvider<ZodTypeProvider>()
+    .get(
+      "/program/:id",
+      {
+        schema: {
+          params: z.object({
+            id: z.string(),
+          }),
+          response: {
+            404: z.string(),
+            200: GetProgramStateResponseBody,
+          },
         },
       },
-    },
-    (req, reply) => {
-      const rootManagerSnapshot = rootManager.getSnapshot();
+      (req, reply) => {
+        const rootManagerSnapshot = rootManager.getSnapshot();
 
-      const programActor =
-        rootManagerSnapshot.context.programActors[req.params.id];
-      if (programActor === undefined) {
-        reply.code(404).send("Unknown program");
+        const programActor =
+          rootManagerSnapshot.context.programActors[req.params.id];
+        if (programActor === undefined) {
+          reply.code(404).send("Unknown program");
 
-        return;
+          return;
+        }
+
+        const programActorSnapshot = programActor.getSnapshot();
+
+        return {
+          processes: programActorSnapshot.context.processActors.map(
+            (processActor) => {
+              const processActorSnapshot = processActor.getSnapshot();
+
+              return {
+                status: processActorSnapshot.value,
+              };
+            }
+          ),
+        };
       }
+    )
+    .post(
+      "/program/:id/start",
+      {
+        schema: {
+          params: z.object({
+            id: z.string(),
+          }),
+          response: {
+            404: z.string(),
+            200: z.literal("ok"),
+          },
+        },
+      },
+      (req, reply) => {
+        const rootManagerSnapshot = rootManager.getSnapshot();
 
-      const programActorSnapshot = programActor.getSnapshot();
+        const programActor =
+          rootManagerSnapshot.context.programActors[req.params.id];
+        if (programActor === undefined) {
+          reply.code(404).send("Unknown program");
 
-      return {
-        processes: programActorSnapshot.context.processActors.map(
-          (processActor) => {
-            const processActorSnapshot = processActor.getSnapshot();
+          return;
+        }
 
-            return {
-              status: processActorSnapshot.value,
-            };
-          }
-        ),
-      };
-    }
-  );
+        programActor.send({ type: "Start" });
+
+        return "ok";
+      }
+    );
 
   await httpServer.listen({ port: 3000 });
 }
