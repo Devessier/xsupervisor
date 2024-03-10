@@ -1,5 +1,12 @@
-import { ActorRefFrom, assertEvent, assign, fromCallback, setup } from "xstate";
-import { ProgramConfiguration, StdMode } from "./config-parsing";
+import {
+  ActorRefFrom,
+  assertEvent,
+  assign,
+  fromCallback,
+  log,
+  setup,
+} from "xstate";
+import { ProgramConfiguration } from "./config-parsing";
 import { ChildProcess, spawn as spawnChildProcess } from "node:child_process";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -30,11 +37,14 @@ export const processMachine = setup({
       childProcess: ChildProcess | undefined;
       processStartedAt: Date | undefined;
       processEndedAt: Date | undefined;
+      startRetries: number;
     },
   },
   actors: {
     "Spawn process": fromCallback<any, { configuration: ProgramConfiguration }>(
       ({ input, sendBack }) => {
+        console.log("Spawning process...");
+
         const childProcess = spawnChildProcess(
           input.configuration.cmd.split(" ")[0],
           input.configuration.cmd.split(" ").slice(1),
@@ -90,6 +100,12 @@ export const processMachine = setup({
     ),
   },
   actions: {
+    "Increment start retries in context": assign({
+      startRetries: ({ context }) => context.startRetries + 1,
+    }),
+    "Reset start retries in context": assign({
+      startRetries: 0,
+    }),
     "Assign child process to context": assign({
       childProcess: ({ event }) => {
         assertEvent(event, "Process spawned");
@@ -109,16 +125,19 @@ export const processMachine = setup({
     "Process start time": ({ context }) =>
       context.configuration.starttime * 1000,
   },
+  guards: {
+    "Reached max start tries": ({ context }) =>
+      context.startRetries >= context.configuration.startretries,
+  },
 }).createMachine({
   id: "Process",
   context: ({ input }) => {
-    console.log("creating process machine", input.configuration);
-
     return {
       configuration: input.configuration,
       childProcess: undefined,
       processStartedAt: undefined,
       processEndedAt: undefined,
+      startRetries: 0,
     };
   },
   initial: "Checking initial state",
@@ -135,6 +154,7 @@ export const processMachine = setup({
       ],
     },
     Stopped: {
+      entry: log("Enters Stopped state"),
       on: {
         Start: {
           target: "Executing",
@@ -142,6 +162,7 @@ export const processMachine = setup({
       },
     },
     Executing: {
+      entry: log("Enters Executing state"),
       exit: "Stop process lifetime chronometer",
       initial: "Starting",
       invoke: {
@@ -150,6 +171,7 @@ export const processMachine = setup({
       },
       states: {
         Spawning: {
+          entry: log("Enters Executing.Spawning state"),
           on: {
             "Process spawned": {
               target: "Starting",
@@ -167,6 +189,7 @@ export const processMachine = setup({
           },
         },
         Starting: {
+          entry: log("Enters Executing.Starting state"),
           description: `Wait for the process to stabilize according to the starttime property before considering it running.`,
           after: {
             "Process start time": {
@@ -180,6 +203,10 @@ export const processMachine = setup({
           },
         },
         Running: {
+          entry: [
+            log("Enters Executing.Running state"),
+            "Reset start retries in context",
+          ],
           on: {
             "Process exited": {
               target: "#Process.Exited",
@@ -188,9 +215,25 @@ export const processMachine = setup({
         },
       },
     },
-    Backoff: {},
-    Exited: {},
-    Fatal: {},
+    Backoff: {
+      entry: log("Enters Backoff state"),
+      always: [
+        {
+          guard: "Reached max start tries",
+          target: "Fatal",
+        },
+        {
+          target: "Executing",
+          actions: "Increment start retries in context",
+        },
+      ],
+    },
+    Exited: {
+      entry: log("Enters Exited state"),
+    },
+    Fatal: {
+      entry: log("Enters Fatal state"),
+    },
   },
 });
 
