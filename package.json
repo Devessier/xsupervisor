@@ -21,6 +21,8 @@
   },
   "dependencies": {
     "fastify": "^4.26.2",
+    "fastify-type-provider-zod": "^1.1.9",
+    "sade": "^1.8.1",
     "xstate": "^5.9.1",
     "yaml": "^2.4.1",
     "zod": "^3.22.4"
