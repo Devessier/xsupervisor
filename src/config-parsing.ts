@@ -63,7 +63,7 @@ export const Configuration = z.object({
         .optional()
         .default("AUTO"),
       env: z
-        .record(z.string())
+        .record(z.unknown().transform((v) => String(v)))
         .optional()
         .default(() => ({})),
     })

@@ -54,7 +54,7 @@ programs:
     stderr: /tmp/nginx.stderr
     env:
       ANSWER: "42"
-      STARTED_BY: taskmaster
+      STARTED_BY: true
   unknown-command:
     cmd: yolo
     autostart: true
